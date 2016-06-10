@@ -1,0 +1,192 @@
+//------------------------------------------------------
+
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "eclipse"
+apply plugin: "signing"
+
+//------------------------------------------------------
+
+String nome = "Unha-de-gato"
+String descricao = "Concentrador, compartilhador e distribuidor de Copaíbas."
+
+group = "com.joseflavio"
+archivesBaseName = "unhadegato"
+version = "1.0-A1"
+
+//------------------------------------------------------
+
+float javaVersao = 1.7
+String codificacao = "ISO-8859-1"
+
+sourceCompatibility = javaVersao
+compileJava.options.encoding = codificacao
+
+sourceSets {
+    main.java.srcDirs = ["fonte"]
+    main.resources.srcDirs = ["recurso"]
+}
+
+//------------------------------------------------------
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir:"biblioteca", include:["*.jar"])
+    compile "com.joseflavio:copaiba:1.0-A1"
+    compile "org.zeromq:jeromq:0.3.5"
+    compile "org.apache.logging.log4j:log4j-api:2.5"
+    compile "org.apache.logging.log4j:log4j-core:2.5"
+    testCompile "junit:junit:4.12"
+}
+
+//------------------------------------------------------
+
+jar {
+    manifest {
+        attributes "Implementation-Title": nome,
+                   "Implementation-Version": version,
+                   "Main-Class": "com.joseflavio.unhadegato.Concentrador",
+                   "Class-Path": configurations.compile.collect{ it.getName() }.join(" ")
+    }
+}
+
+//------------------------------------------------------
+
+task jarFonte(type: Jar) {
+    
+    classifier = "sources"
+    from sourceSets.main.allSource
+
+    manifest {
+        attributes "Implementation-Title": nome + " - Codigo Fonte",
+                   "Implementation-Version": version,
+                   "Main-Class": ""
+    }
+
+}
+
+//------------------------------------------------------
+
+task jarDoc(type: Jar) {
+
+    classifier = "javadoc"
+    from javadoc
+
+    javadoc.options.encoding = codificacao
+    javadoc.failOnError = false
+    javadoc.title = nome + " " + version
+    javadoc.options.links = []
+    
+}
+
+//------------------------------------------------------
+
+task distDep(type: Copy, dependsOn: [jar]) {
+    into "$buildDir/dist"
+    from "$projectDir/dist"
+    from "$buildDir/libs/" + archivesBaseName + "-" + version + ".jar"
+    from configurations.compile
+}
+
+task distExe << {
+    def destino = new File( "build/exe" )
+    destino.mkdirs()
+    def comando = new File( "build/exe/" + archivesBaseName + ".sh" )
+    def nomeJar = archivesBaseName + "-" + version + ".jar"
+    comando << "#!/bin/bash\n\n"
+    comando << "java -server -XX:+UseConcMarkSweepGC -XX:+TieredCompilation "
+    comando << "-XX:+AggressiveOpts -XX:+UseCompressedOops -XX:+UseBiasedLocking -XX:+UseNUMA "
+    comando << "-jar $nomeJar \"\$@\"\n"
+}
+
+task dist(type: Copy, dependsOn: [distDep, distExe]) {
+    into "$buildDir/dist"
+    from "$buildDir/exe"
+    fileMode 0755
+}
+
+build.dependsOn dist
+
+//------------------------------------------------------
+
+eclipse {
+    project {
+        name = archivesBaseName
+        comment = descricao
+    }
+    jdt {
+        sourceCompatibility = javaVersao
+        targetCompatibility = javaVersao
+    }
+    classpath {
+        defaultOutputDir = file("binario")
+        file {
+            beforeMerged {
+                classpath -> classpath.entries.removeAll { entry -> entry.kind == "output" }
+            }
+        }
+    }
+}
+
+//------------------------------------------------------
+
+artifacts {
+    archives jarFonte, jarDoc
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication( userName: "xxxxxx", password: "xxxxxx" )
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication( userName: "xxxxxx", password: "xxxxxx" )
+      }
+
+      pom.project {
+
+        name nome
+        packaging "jar"
+        description descricao
+        url "http://www.joseflavio.com/unhadegato"
+
+        scm {
+          connection "scm:git:ssh:git@github.com/joseflaviojr/unhadegato.git"
+          developerConnection "scm:git:ssh:git@github.com/joseflaviojr/unhadegato.git"
+          url "https://github.com/joseflaviojr/unhadegato.git"
+        }
+
+        licenses {
+          license {
+            name "GNU Lesser General Public License, Version 3"
+            url "http://www.gnu.org/licenses/lgpl.txt"
+          }
+        }
+
+        developers {
+          developer {
+            id "joseflaviojr"
+            name "José Flávio de Souza Dias Júnior"
+            email "contato@joseflavio.com"
+          }
+        }
+
+      }
+
+    }
+  }
+}
+
+//------------------------------------------------------
