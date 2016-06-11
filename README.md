@@ -1,18 +1,18 @@
 # Unha-de-gato
 
-Concentrador, compartilhador e distribuidor de Copaíbas.
+Concentrador, compartilhador e distribuidor de [Copaíbas](http://joseflavio.com/copaiba).
 
-Concentrator, sharer and distributor of Copaíbas.
+Concentrator, sharer and distributor of [Copaíbas](http://joseflavio.com/copaiba).
 
 ## Versão Atual / Current Version
 
 1.0-A1
 
-Padrão de versionamento: http://joseflavio.com/jfv/
+Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 ## Requisitos / Requirements
 
-* Java 1.7
+* Java >= 1.7
 
 ## Uso como cliente / Use as client
 
