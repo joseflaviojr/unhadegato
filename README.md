@@ -6,7 +6,7 @@ Concentrator, sharer and distributor of [Copaíbas](http://joseflavio.com/copaib
 
 ## Versão Atual / Current Version
 
-1.0-A1
+1.0-A3
 
 Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
@@ -18,14 +18,14 @@ Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 Gradle:
 
-    compile 'com.joseflavio:unhadegato:1.0-A1'
+    compile 'com.joseflavio:unhadegato:1.0-A3'
 
 Maven:
 
     <dependency>
         <groupId>com.joseflavio</groupId>
         <artifactId>unhadegato</artifactId>
-        <version>1.0-A1</version>
+        <version>1.0-A3</version>
     </dependency>
 
 ## Uso como servidor / Use as server

@@ -77,7 +77,7 @@ public class Concentrador {
     private static long ultimaDataConfGeral;
     private static long ultimaDataConfCopaibas;
     
-    private static long intervalo = 10;
+    private static long intervalo = 50;
     
     private static final Logger log = LogManager.getLogger( Concentrador.class.getPackage().getName() );
     
@@ -331,7 +331,7 @@ public class Concentrador {
         }else{
             prop.setProperty( "porta", "8885" );
             prop.setProperty( "processos", "5" );
-            prop.setProperty( "intervalo", "10" );
+            prop.setProperty( "intervalo", "50" );
             try( FileOutputStream fos = new FileOutputStream( arquivo ) ){
                 prop.store( fos, "Unha-de-gato" );
             }

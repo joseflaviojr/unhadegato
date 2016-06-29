@@ -12,7 +12,20 @@ String descricao = "Concentrador, compartilhador e distribuidor de Copaíbas."
 
 group = "com.joseflavio"
 archivesBaseName = "unhadegato"
-version = "1.0-A2"
+version = "1.0-A3"
+
+//------------------------------------------------------
+
+[
+
+"biblioteca",
+"binario",
+"dist",
+"fonte",
+"projeto",
+"recurso"
+
+].each { new File(it).mkdirs() }
 
 //------------------------------------------------------
 
@@ -98,7 +111,7 @@ task distExe << {
     def nomeJar = archivesBaseName + "-" + version + ".jar"
     comando << "#!/bin/bash\n\n"
     comando << "java -server -XX:+UseConcMarkSweepGC -XX:+TieredCompilation "
-    comando << "-XX:+AggressiveOpts -XX:+UseCompressedOops -XX:+UseBiasedLocking -XX:+UseNUMA "
+    comando << "-XX:+AggressiveOpts -XX:+UseBiasedLocking -XX:+UseNUMA "
     comando << "-jar $nomeJar \"\$@\"\n"
 }
 

@@ -1,0 +1,26 @@
+#!/bin/bash
+# description: Unha-de-gato
+# processname: unhadegato
+# chkconfig: 2345 91 91
+
+case $1 in
+start)
+cd /usr/local/unhadegato
+./unhadegato.sh . &
+;;
+stop)
+pkill -f \\-jar\ unhadegato\\-.*\.jar\ \.
+;;
+teste)
+echo "Teste";;
+esac
+exit 0
+
+# cp /usr/local/unhadegato/unhadegato-service.txt /etc/init.d/unhadegato
+# chmod 755 /etc/init.d/unhadegato
+
+# chkconfig --add unhadegato
+# chkconfig --level 2345 unhadegato on
+
+# systemctl start unhadegato
+# service unhadegato start
