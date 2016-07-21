@@ -12,7 +12,7 @@ String descricao = "Concentrador, compartilhador e distribuidor de Copaíbas."
 
 group = "com.joseflavio"
 archivesBaseName = "unhadegato"
-version = "1.0-A4"
+version = "1.0-A5"
 
 //------------------------------------------------------
 
