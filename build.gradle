@@ -109,7 +109,7 @@ task distExe << {
     destino.mkdirs()
     def comando = new File( "build/exe/" + archivesBaseName + ".sh" )
     def nomeJar = archivesBaseName + "-" + version + ".jar"
-    comando << "#!/bin/bash\n\n"
+    comando << "#!/bin/sh\n\n"
     comando << "java -server -XX:+UseConcMarkSweepGC -XX:+TieredCompilation "
     comando << "-XX:+AggressiveOpts -XX:+UseBiasedLocking -XX:+UseNUMA "
     comando << "-jar $nomeJar \"\$@\"\n"
