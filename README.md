@@ -6,7 +6,7 @@ Concentrator, sharer and distributor of [Copaíbas](http://joseflavio.com/copaib
 
 ## Versão Atual / Current Version
 
-1.0-A5
+1.0-A6
 
 Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
@@ -19,14 +19,14 @@ Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 Download and compilation:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A5.zip
-    unzip 1.0-A5.zip
-    cd unhadegato-1.0-A5
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A6.zip
+    unzip 1.0-A6.zip
+    cd unhadegato-1.0-A6
     gradle dist
 
 Dockerizing:
 
-    docker build --force-rm -t joseflavio/unhadegato:1.0-A5 .
+    docker build --force-rm -t joseflavio/unhadegato:1.0-A6 .
 
 Creating the volume:
 
@@ -34,7 +34,7 @@ Creating the volume:
 
 Running:
 
-    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A5
+    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A6
 
 Connecting to the network:
 
@@ -44,9 +44,9 @@ Connecting to the network:
 
 Download, compilation and running:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A5.zip
-    unzip 1.0-A5.zip
-    cd unhadegato-1.0-A5
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A6.zip
+    unzip 1.0-A6.zip
+    cd unhadegato-1.0-A6
     gradle dist
     cd build/dist
     ./unhadegato.sh
@@ -55,14 +55,14 @@ Download, compilation and running:
 
 Gradle:
 
-    compile 'com.joseflavio:unhadegato:1.0-A5'
+    compile 'com.joseflavio:unhadegato:1.0-A6'
 
 Maven:
 
     <dependency>
         <groupId>com.joseflavio</groupId>
         <artifactId>unhadegato</artifactId>
-        <version>1.0-A5</version>
+        <version>1.0-A6</version>
     </dependency>
 
 ## Desenvolvimento / Development
