@@ -12,6 +12,7 @@ Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 ## Requisitos / Requirements
 
+* Git >= 1.8
 * Java >= 1.7
 * Gradle >= 2.0
 
@@ -22,13 +23,13 @@ Download and compilation:
     wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A7.zip
     unzip 1.0-A7.zip
     cd unhadegato-1.0-A7
-    gradle dist
+    gradle build
 
-Dockerizing:
+Image:
 
     docker build --force-rm -t joseflavio/unhadegato:1.0-A7 .
 
-Creating the volume:
+Volume:
 
     docker volume create --name unhadegato
 
@@ -36,7 +37,7 @@ Running:
 
     docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A7
 
-Connecting to the network:
+Network:
 
     docker network connect --ip=x.x.x.x NETWORK_NAME unhadegato
 
@@ -47,7 +48,7 @@ Download, compilation and running:
     wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A7.zip
     unzip 1.0-A7.zip
     cd unhadegato-1.0-A7
-    gradle dist
+    gradle build
     cd build/dist
     ./unhadegato.sh
 
@@ -67,11 +68,12 @@ Maven:
 
 ## Desenvolvimento / Development
 
-Execute o comando a seguir e importe o projeto no Eclipse IDE.
+Configuração do projeto para Eclipse ou IntelliJ IDEA.
 
-Run the following command and import the project in Eclipse IDE.
+Project configuration for Eclipse or IntelliJ IDEA.
 
     gradle eclipse
+    gradle cleanIdea idea
 
 ## Compilação / Compilation
 
