@@ -6,7 +6,7 @@ Concentrator, sharer and distributor of [Copaíbas](http://joseflavio.com/copaib
 
 ## Versão Atual / Current Version
 
-1.0-A7
+1.0-A8
 
 Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
@@ -20,14 +20,14 @@ Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 Download and compilation:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A7.zip
-    unzip 1.0-A7.zip
-    cd unhadegato-1.0-A7
-    gradle build
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A8.zip
+    unzip 1.0-A8.zip
+    cd unhadegato-1.0-A8
+    gradle dist
 
 Image:
 
-    docker build --force-rm -t joseflavio/unhadegato:1.0-A7 .
+    docker build --force-rm -t joseflavio/unhadegato:1.0-A8 .
 
 Volume:
 
@@ -35,7 +35,7 @@ Volume:
 
 Running:
 
-    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A7
+    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A8
 
 Network:
 
@@ -45,10 +45,10 @@ Network:
 
 Download, compilation and running:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A7.zip
-    unzip 1.0-A7.zip
-    cd unhadegato-1.0-A7
-    gradle build
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A8.zip
+    unzip 1.0-A8.zip
+    cd unhadegato-1.0-A8
+    gradle dist
     cd build/dist
     ./unhadegato.sh
 
@@ -56,14 +56,14 @@ Download, compilation and running:
 
 Gradle:
 
-    compile 'com.joseflavio:unhadegato:1.0-A7'
+    compile 'com.joseflavio:unhadegato:1.0-A8'
 
 Maven:
 
     <dependency>
         <groupId>com.joseflavio</groupId>
         <artifactId>unhadegato</artifactId>
-        <version>1.0-A7</version>
+        <version>1.0-A8</version>
     </dependency>
 
 ## Desenvolvimento / Development
@@ -76,5 +76,11 @@ Project configuration for Eclipse or IntelliJ IDEA.
     gradle cleanIdea idea
 
 ## Compilação / Compilation
+
+Parcial/Partial:
+
+    gradle clean dist
+
+Completa/Complete:
 
     gradle clean build

@@ -413,7 +413,8 @@ public class Concentrador {
                 fw.write( "# Copaibas\n\n" );
                 fw.write( "# nome=\"endereço\",\"porta\",\"segurança: TLS, SSL ou vazio\",\"ignorar certificado: S ou N\",\"usuario\",\"senha\"\n" );
                 fw.write( "# exemplo1=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\"\n" );
-                fw.write( "# exemplo2=\"127.0.0.1\",\"8884\",\"TLS\",\"S\",\"maria\",\"12345678\"\n" );
+                fw.write( "# exemplo2=\"127.0.0.1\",\"8884\",\"TLS\",\"S\",\"maria\",\"12345678\"\n\n" );
+                fw.write( "copaiba=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\"\n" );
             }
         }
         
