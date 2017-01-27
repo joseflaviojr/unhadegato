@@ -35,11 +35,20 @@ Volume:
 
 Running:
 
-    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --restart=unless-stopped joseflavio/unhadegato:1.0-A8
+    docker run --name="unhadegato" -d -p 8885:8885 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A8
 
-Network:
+Configuration:
 
-    docker network connect --ip=x.x.x.x NETWORK_NAME unhadegato
+    cd /var/lib/docker/volumes/unhadegato/_data/conf
+
+Log:
+
+    tail /var/lib/docker/volumes/unhadegato/_data/logs/unhadegato.log -n 100
+
+Removal:
+
+    docker rm -f unhadegato
+    docker rmi joseflavio/unhadegato:1.0-A8
 
 ## Servidor tradicional / Traditional server
 
