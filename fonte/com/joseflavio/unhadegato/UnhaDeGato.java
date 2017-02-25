@@ -39,15 +39,13 @@
 
 package com.joseflavio.unhadegato;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.InetAddress;
-
-import org.zeromq.ZMQ;
-
 import com.joseflavio.copaiba.Copaiba;
 import com.joseflavio.copaiba.CopaibaConexao;
 import com.joseflavio.copaiba.CopaibaException;
+import com.joseflavio.urucum.comunicacao.Consumidor;
+import com.joseflavio.urucum.comunicacao.SocketConsumidor;
+
+import java.io.*;
 
 /**
  * Conexão ao {@link Concentrador}.
@@ -55,29 +53,33 @@ import com.joseflavio.copaiba.CopaibaException;
  */
 public class UnhaDeGato implements Closeable {
 	
-	private ZMQ.Context contexto;
+	private String endereco;
 	
-	private ZMQ.Socket servidor;
-
+	private int porta;
+	
+	private boolean segura;
+	
+	private boolean ignorarCertificado;
+	
 	/**
-	 * Conecta-se a um {@link Concentrador}.
-	 * @param endereco {@link InetAddress Endereço} do {@link Concentrador}.
-	 * @param porta Porta TCP do {@link Concentrador}.
+	 * Argumentos para conexão a um {@link Concentrador}.<br>
+	 * A {@link SocketConsumidor#SocketConsumidor(String, int, boolean, boolean) conexão} será realizada por demanda,
+	 * fechando após cada chamada.
+	 * @see SocketConsumidor#SocketConsumidor(String, int, boolean, boolean)
 	 */
-	public UnhaDeGato( String endereco, int porta ) throws IOException {
-		
-		try{
-		
-			contexto = ZMQ.context( 1 );
-			servidor = contexto.socket( ZMQ.REQ );
-			servidor.connect( "tcp://" + endereco + ":" + porta );
-		
-		}catch( RuntimeException e ){
-			throw e;
-		}catch( Exception e ){
-			throw new IOException( e );
-		}
-		
+	public UnhaDeGato( String endereco, int porta, boolean segura, boolean ignorarCertificado ) {
+		this.endereco = endereco;
+		this.porta = porta;
+		this.segura = segura;
+		this.ignorarCertificado = ignorarCertificado;
+	}
+	
+	/**
+	 * Conecta-se a um {@link Concentrador}, de forma não segura (sem SSL).
+	 * @see UnhaDeGato#UnhaDeGato(String, int, boolean, boolean)
+	 */
+	public UnhaDeGato( String endereco, int porta ) {
+		this( endereco, porta, false, true );
 	}
 	
 	/**
@@ -88,7 +90,7 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public String executar( String copaiba, String linguagem, String rotina ) throws RuntimeException, IOException {
-		return enviar( 1, copaiba, linguagem, rotina );
+		return enviar( copaiba, 1, linguagem, rotina );
 	}
 	
 	/**
@@ -98,7 +100,7 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public void atribuir( String copaiba, String variavel, String classe, String json ) throws RuntimeException, IOException {
-		enviar( 2, copaiba, variavel, classe, json );
+		enviar( copaiba, 2, variavel, classe, json );
 	}
 	
 	/**
@@ -108,7 +110,7 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public String obter( String copaiba, String variavel ) throws RuntimeException, IOException {
-		return enviar( 3, copaiba, variavel );
+		return enviar( copaiba, 3, variavel );
 	}
 	
 	/**
@@ -118,7 +120,7 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public String obter( String copaiba, String objeto, String metodo ) throws RuntimeException, IOException {
-		return enviar( 4, copaiba, objeto, metodo );
+		return enviar( copaiba, 4, objeto, metodo );
 	}
 	
 	/**
@@ -128,7 +130,7 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public void remover( String copaiba, String variavel ) throws RuntimeException, IOException {
-		enviar( 5, copaiba, variavel );
+		enviar( copaiba, 5, variavel );
 	}
 	
 	/**
@@ -138,34 +140,45 @@ public class UnhaDeGato implements Closeable {
 	 * @throws IOException devido a problemas de rede ou por {@link CopaibaException}.
 	 */
 	public String solicitar( String copaiba, String classe, String estado, String metodo ) throws RuntimeException, IOException {
-		return enviar( 6, copaiba, classe, estado, metodo );
+		return enviar( copaiba, 6, classe, estado, metodo );
 	}
 	
-	private String enviar( int instrucao, String... parametros ) throws RuntimeException, IOException {
+	private String enviar( String copaiba, int requisicao, String... parametros ) throws RuntimeException, IOException {
 		
-		if( servidor == null ) throw new IOException( "Fechado." );
+		Consumidor consumidor = null;
 		
 		try{
 			
-			StringBuilder str = new StringBuilder( parametros.length * 20 );
+			ByteArrayOutputStream baos = new ByteArrayOutputStream( 128 );
+			
+			Util.enviarTexto( baos, copaiba );
+			
+			baos.write( requisicao );
+			
+			Util.enviarInt( baos, parametros.length );
+			
 			for( String parametro : parametros ){
-				str.append( parametro );
-				str.append( '\b' );
+				Util.enviarTexto( baos, parametro );
 			}
 			
-			byte[] bytes_str = str.toString().getBytes( "UTF-8" );
-			byte[] bytes = new byte[ 2 + bytes_str.length ];
+			consumidor = new SocketConsumidor( endereco, porta, segura, ignorarCertificado );
 			
-			bytes[0] = (byte) instrucao;
-			bytes[1] = (byte) parametros.length;
-			System.arraycopy( bytes_str, 0, bytes, 2, bytes_str.length );
+			InputStream  is = consumidor.getInputStream();
+			OutputStream os = consumidor.getOutputStream();
 			
-			servidor.send( bytes, 0 );
+			os.write( baos.toByteArray() );
+			os.flush();
 			
-			String retorno = new String( servidor.recv( 0 ), "UTF-8" );
-
-			//Unha-de-gato.ERRO@Classe@Mensagem
-			if( retorno.startsWith( "Unha-de-gato.ERRO" ) ){
+			String retorno = Util.receberString( is );
+			
+			try{
+				os.write( 0 );
+				os.flush();
+			}catch( Exception e ){
+			}
+			
+			// Unha-de-gato.ERRO@Classe@Mensagem
+			if( retorno != null && retorno.startsWith( "Unha-de-gato.ERRO" ) ){
 				String[] p = retorno.split( "@" );
 				dispararErro( p[1], p[2] );
 			}
@@ -178,6 +191,11 @@ public class UnhaDeGato implements Closeable {
 			throw e;
 		}catch( Exception e ){
 			throw new IOException( e );
+		}finally{
+			
+			Util.fechar( consumidor );
+			consumidor = null;
+			
 		}
 		
 	}
@@ -218,24 +236,10 @@ public class UnhaDeGato implements Closeable {
 	}
 	
 	/**
-	 * Fecha e inutiliza esta conexão.
+	 * Fecha e inutiliza este {@link UnhaDeGato}.
 	 */
 	public void fechar() {
-		
-		try{
-			if( servidor != null ) servidor.close();
-		}catch( Exception e ){
-		}finally{
-			servidor = null;
-		}
-		
-		try{
-			if( contexto != null ) contexto.term();
-		}catch( Exception e ){
-		}finally{
-			contexto = null;
-		}
-		
+		endereco = null;
 	}
 	
 	@Override

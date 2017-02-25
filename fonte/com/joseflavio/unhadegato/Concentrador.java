@@ -39,30 +39,20 @@
 
 package com.joseflavio.unhadegato;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
-
 import com.joseflavio.copaiba.Copaiba;
 import com.joseflavio.copaiba.CopaibaConexao;
-import com.joseflavio.copaiba.CopaibaException;
+import com.joseflavio.urucum.comunicacao.Consumidor;
+import com.joseflavio.urucum.comunicacao.Servidor;
+import com.joseflavio.urucum.comunicacao.SocketServidor;
+import com.joseflavio.urucum.texto.StringUtil;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Concentrador de {@link Copaiba}s.
@@ -72,389 +62,194 @@ public class Concentrador {
     
     private static File configuracao;
     
-    private static List<Processador> processadores = Collections.synchronizedList( new ArrayList<Processador>() );
+    private static Servidor servidor1 = null;
+    private static Servidor servidor2 = null;
     
-    private static long ultimaDataConfGeral;
-    private static long ultimaDataConfCopaibas;
-    
-    private static long intervalo = 50;
-    
-    private static final Logger log = LogManager.getLogger( Concentrador.class.getPackage().getName() );
+    private static Map<String, CopaibaGerenciador> gerenciadores = new HashMap<>();
     
     /**
-     * @see CopaibaConexao#CopaibaConexao(String, int, boolean, boolean, String, String)
+     * {@link CopaibaGerenciador#iniciar() Iniciar}, {@link CopaibaGerenciador#atualizar(String, int, boolean, boolean, String, String, int) atualizar}
+     * e/ou {@link CopaibaGerenciador#encerrar() encerrar} {@link CopaibaGerenciador}'s.
+     * @param arquivo Arquivo de configuração de {@link CopaibaConexao}'s.
      */
-    private static class Conexao {
-        
-        private String endereco;
-        private int porta;
-        private boolean segura;
-        private boolean ignorarCertificado;
-        private String usuario;
-        private String senha;
-        
-        public Conexao( String conexao ) {
-            try{
-                String[] p = conexao.split( "\",\"" );
-                this.endereco = p[0].substring( 1 );
-                this.porta = Integer.parseInt( p[1] );
-                this.segura = p[2].equals( "TLS" ) || p[2].equals( "SSL" );
-                this.ignorarCertificado = p[3].equals( "S" );
-                this.usuario = p[4];
-                this.senha = p[5].substring( 0, p[5].length() - 1 );
-            }catch( Exception e ){
-                throw new IllegalArgumentException( "Formato incorreto: " + conexao );
+    private static void executarCopaibas( File arquivo ) {
+    
+        try{
+            
+            if( ! arquivo.exists() ){
+                try( FileWriter fw = new FileWriter( arquivo ) ){
+                    fw.write( "# Copaibas\n\n" );
+                    fw.write( "# Nome=\"Endereço\",\"Porta\",\"Segurança: TLS, SSL ou vazio\",\"Ignorar Certificado: S ou N\",\"Usuario\",\"Senha\"[,\"Conexoes\"]\n" );
+                    fw.write( "# exemplo1=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\",\"10\"\n" );
+                    fw.write( "# exemplo2=\"127.0.0.1\",\"8884\",\"TLS\",\"S\",\"maria\",\"12345678\",\"2\"\n\n" );
+                    fw.write( "copaiba=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\",\"2\"\n" );
+                }
             }
-        }
+    
+            Properties props = new Properties();
+            
+            try( FileInputStream fis = new FileInputStream( arquivo ) ){
+                props.load( fis );
+            }
+            
+            for( Object chave : props.keySet() ){
+    
+                try{
+                    
+                    String nome = chave.toString();
         
-        @Override
-        public boolean equals( Object obj ) {
-            Conexao c = (Conexao) obj;
-            if( ! endereco.equals( c.endereco ) ) return false;
-            if( porta != c.porta ) return false;
-            if( segura != c.segura ) return false;
-            if( ignorarCertificado != c.ignorarCertificado ) return false;
-            if( ! usuario.equals( c.usuario ) ) return false;
-            if( ! senha.equals( c.senha ) ) return false;
-            return true;
-        }
+                    String[] p = props.getProperty( nome ).split( "\",\"" );
         
-        @Override
-        public int hashCode() {
-            return endereco.hashCode() + porta;
-        }
+                    String  endereco    = p[0].substring( 1 );
+                    int     porta       = Integer.parseInt( p[1] );
+                    boolean segura      = p[2].equals( "TLS" ) || p[2].equals( "SSL" );
+                    boolean ignorarCert = p[3].equals( "S" );
+                    String  usuario     = p[4];
+                    String  senha       = p.length >= 7 ? p[5] : p[5].substring( 0, p[5].length() - 1 );
+                    int     conexoes    = p.length >= 7 ? Integer.parseInt( p[6].substring( 0, p[6].length() - 1 ) ) : 5;
         
-        public CopaibaConexao conectar() throws CopaibaException {
-            return new CopaibaConexao( endereco, porta, segura, ignorarCertificado, usuario, senha );
-        }
+                    CopaibaGerenciador gerenciador = gerenciadores.get( nome );
         
+                    if( gerenciador == null ){
+                        Util.getLog().info( Util.getMensagem( "$copaiba.iniciando", nome ) );
+                        gerenciador = new CopaibaGerenciador( nome, endereco, porta, segura, ignorarCert, usuario, senha, conexoes );
+                        gerenciadores.put( nome, gerenciador );
+                        gerenciador.iniciar();
+                        Util.getLog().info( Util.getMensagem( "$copaiba.iniciada", nome ) );
+                    }else{
+                        Util.getLog().info( Util.getMensagem( "$copaiba.verificando", nome ) );
+                        if( gerenciador.atualizar( endereco, porta, segura, ignorarCert, usuario, senha, conexoes ) ){
+                            Util.getLog().info( Util.getMensagem( "$copaiba.atualizada", nome ) );
+                        }else{
+                            Util.getLog().info( Util.getMensagem( "$copaiba.inalterada", nome ) );
+                        }
+                    }
+    
+                    try( CopaibaConexao cc = new CopaibaConexao( endereco, porta, segura, ignorarCert, usuario, senha ) ){
+                        cc.verificar();
+                        Util.getLog().info( Util.getMensagem( "$copaiba.conexao.teste.exito", nome ) );
+                    }catch( Exception e ){
+                        Util.getLog().info( Util.getMensagem( "$copaiba.conexao.teste.erro", nome, e.getMessage() ) );
+                        Util.getLog().error( e.getMessage(), e );
+                    }
+                    
+                }catch( Exception e ){
+                    Util.getLog().error( e.getMessage(), e );
+                }
+    
+            }
+            
+            for( String nome : gerenciadores.keySet() ){
+                if( ! props.containsKey( nome ) ){
+                    try{
+                        Util.getLog().info( Util.getMensagem( "$copaiba.encerrando", nome ) );
+                        CopaibaGerenciador gerenciador = (CopaibaGerenciador) props.remove( nome );
+                        gerenciador.encerrar();
+                        Util.getLog().info( Util.getMensagem( "$copaiba.encerrada", nome ) );
+                    }catch( Exception e ){
+                        Util.getLog().error( e.getMessage(), e );
+                    }
+                }
+            }
+            
+        }catch( Exception e ){
+            Util.getLog().error( e.getMessage(), e );
+        }
+    
     }
-
-    private static class Processador extends Thread {
-
-        private Context contexto;
-        private ZMQ.Socket cliente;
-        private Map<String,Conexao> conexoes;
-        private Map<String,CopaibaConexao> copaibas;
-        private Map<String,Conexao> atualizacao;
-
-        private Processador( Context contexto, Map<String,Conexao> conexoes ) {
-            this.contexto = contexto;
-            this.conexoes = conexoes;
-            this.copaibas = new HashMap<>();
+    
+    private static class Portal extends Thread {
+        
+        private Servidor servidor;
+    
+        public Portal( Servidor servidor ) {
+            this.servidor = servidor;
         }
-
+    
         @Override
         public void run() {
-            
-            try{
-                cliente = contexto.socket( ZMQ.REP );
-                cliente.connect( "inproc://unhadegato" );
-                cliente.setReceiveTimeOut( 0 );
-            }catch( Exception e ){
-                log.error( e.getMessage(), e );
-            }
-            
-            while( ! isInterrupted() ){
-                
-                if( atualizacao != null ){
-                    fecharCopaibas();
-                    conexoes = atualizacao;
-                    atualizacao = null;
-                }
-                
-                byte[] mensagem = cliente.recv( 0 );
-                
-                if( mensagem == null ){
-                    try{
-                        Thread.sleep( intervalo );
-                        continue;
-                    }catch( InterruptedException e ){
-                        break;
-                    }
-                }
-                
+    
+            Consumidor consumidor = null;
+            String nome = null;
+            boolean erroGrave = false;
+    
+            while( true ){
+    
                 try{
-                    
-                    if( mensagem.length <= 2 ){
-                        enviarErro( new IOException( "Mensagem incompleta." ), cliente );
-                        continue;
-                    }
-                    
-                    int instrucao = mensagem[0];
-                    int total     = mensagem[1];
-                    
-                    if( instrucao < 1 || instrucao > 6 ){
-                        enviarErro( new IOException( "Instrução desconhecida: " + instrucao ), cliente );
-                        continue;
-                    }
-                    
-                    String conteudo = new String( mensagem, 2, mensagem.length - 2, "UTF-8" );
-                    String[] param  = new String[total];
-                    
-                    int pos1 = 0;
-                    int pos2 = conteudo.indexOf( '\b' );
-                    for( int i = 0; i < total; i++ ){
-                        param[i] = conteudo.substring( pos1, pos2 );
-                        pos1 = pos2 + 1;
-                        pos2 = conteudo.indexOf( '\b', pos1 );
-                    }
-                    
-                    String copaibaNome = param[0];
-                    CopaibaConexao copaiba = getCopaiba( copaibaNome );
-                    String retorno = null;
-                    
+    
+                    erroGrave = false;
+    
                     try{
-						retorno = processar( copaiba, instrucao, param );
-					}catch( Exception e ){
-						if( isIOException( e ) ){
-							try{
-								copaiba.verificar();
-								throw e;
-							}catch( Exception f ){
-								fecharCopaiba( copaibaNome );
-								copaiba = getCopaiba( copaibaNome );
-								retorno = processar( copaiba, instrucao, param );
-							}
-						}else{
-							throw e;
-						}
-					}
+                        
+                        consumidor = servidor.aceitar();
+    
+                    }catch( Exception e ){
+                        erroGrave = true;
+                        throw e;
+                    }
+    
+                    consumidor.setTempoEspera( 600 );
+    
+                    nome = Util.receberString( consumidor.getInputStream() );
                     
-                    if( retorno == null ) retorno = "";
-                    cliente.send( retorno.getBytes( "UTF-8" ), 0 );
+                    CopaibaGerenciador gerenciador = gerenciadores.get( nome );
                     
-                }catch( Throwable e ){
-                    enviarErro( e, cliente );
-                    continue;
-                }
-                
-            }
-            
-            processadores.remove( this );
-            fecharCopaibas();
-            
-            try{
-                cliente.close();
-            }catch( Exception f ){
-            }
-            
-            contexto    = null;
-            cliente     = null;
-            conexoes    = null;
-            copaibas    = null;
-            atualizacao = null;
-            
-        }
-        
-        private String processar( CopaibaConexao copaiba, int instrucao, String[] param ) throws CopaibaException {
-			switch( instrucao ){
-			    case 1 :
-			        return (String) copaiba.executar( param[1], param[2], null, true );
-			    case 2 :
-			        copaiba.atribuir( param[1], param[2], param[3] );
-			        return null;
-			    case 3 :
-			        return (String) copaiba.obter( param[1], true );
-			    case 4 :
-			        return (String) copaiba.obter( param[1], param[2], true );
-			    case 5 :
-			        copaiba.remover( param[1] );
-			        return null;
-			    case 6 :
-			        return copaiba.solicitar( param[1], param[2], param[3] );
-			    default :
-			    		return null;
-			}
-        }
-        
-        private CopaibaConexao getCopaiba( String nome ) throws IOException, CopaibaException {
-        		CopaibaConexao copaiba = copaibas.get( nome );
-        		if( copaiba == null || ! copaiba.isAberta() ){
-                Conexao conexao = conexoes.get( nome );
-                if( conexao == null ) throw new IOException( "Copaíba desconhecida: " + nome );
-                copaiba = conexao.conectar();
-                copaibas.put( nome, copaiba );
-            }
-        		return copaiba;
-        }
-        
-        private void fecharCopaiba( String nome ) {
-        		try{
-        			CopaibaConexao copaiba = copaibas.get( nome );
-        			if( copaiba == null ) return;
-                copaiba.fechar( true );
-            }catch( Exception e ){
-            }finally{
-            		copaibas.remove( nome );
-            }
-        }
-        
-        private void fecharCopaibas() {
-            if( copaibas == null ) return;
-            for( CopaibaConexao copaiba : copaibas.values() ){
-                try{
-                    copaiba.fechar( true );
+                    if( gerenciador != null ){
+                        
+                        gerenciador.inserirConsumidor( consumidor );
+                        
+                    }else{
+    
+                        Util.enviarTexto(
+                            consumidor.getOutputStream(),
+                            "Unha-de-gato.ERRO@" + IllegalArgumentException.class.getName() + "@" + Util.getMensagem( "$copaiba.desconhecida", nome )
+                        );
+    
+                        try{
+                            consumidor.getInputStream().read();
+                        }catch( Exception e ){
+                        }finally{
+                            Util.fechar( consumidor );
+                            consumidor = null;
+                        }
+                        
+                    }
+    
                 }catch( Exception e ){
-                }
-            }
-            copaibas.clear();
-        }
-        
-        private boolean isIOException( Throwable e ) {
-        		if( e == null ) return false;
-        		return e instanceof IOException ? true : isIOException( e.getCause() );
-        }
-        
-    }
-    
-    private static void enviarErro( Throwable erro, ZMQ.Socket cliente ) {
-        String mensagem = "Unha-de-gato.ERRO@" + erro.getClass().getName() + "@" + erro.getMessage();
-        byte[] bytes = null;
-        try{
-            bytes = mensagem.getBytes( "UTF-8" );
-        }catch( UnsupportedEncodingException e ){
-            bytes = mensagem.getBytes();
-        }
-        cliente.send( bytes, 0 );
-    }
-    
-    private static Properties carregarConfGeral() throws IOException {
-
-        File arquivo = new File( configuracao, "unhadegato.conf" );
-        Properties prop = new Properties();
-        
-        if( arquivo.exists() ){
-            try( FileInputStream fis = new FileInputStream( arquivo ) ){
-                prop.load( fis );
-            }
-        }else{
-            prop.setProperty( "porta", "8885" );
-            prop.setProperty( "processos", "5" );
-            prop.setProperty( "intervalo", "50" );
-            try( FileOutputStream fos = new FileOutputStream( arquivo ) ){
-                prop.store( fos, "Unha-de-gato" );
-            }
-        }
-        
-        return prop;
-        
-    }
-    
-    private static void verificarConfGeral() throws IOException {
-        
-        long data = new File( configuracao, "unhadegato.conf" ).lastModified();
-        
-        if( data > ultimaDataConfGeral ){
-            
-            log.info( "Atualizando a configuração geral." );
-            
-            Properties conf = carregarConfGeral();
-            
-            intervalo = Integer.parseInt( conf.getProperty( "intervalo" ) );
-            log.info( "Intervalo de espera = " + intervalo + " ms" );
-            
-            int conf_processos = Integer.parseInt( conf.getProperty( "processos" ) );
-            if( conf_processos > 0 ){
-                
-                int diferenca = processadores.size() - conf_processos;
-                
-                if( diferenca > 0 ){
                     
-                    log.info( "Reduzindo a quantidade de processos. Total = " + conf_processos );
-                    
-                    Processador[] remocao = new Processador[diferenca];
-                    
-                    for( int i = 0; i < diferenca; i++ ){
-                        remocao[i] = processadores.get( i );
+                    if( erroGrave ){
+                        
+                        Util.getLog().error( e.getMessage(), e );
+                        
+                        try{
+                            Thread.sleep( 1 * 1000 );
+                        }catch( InterruptedException f ){
+                            return;
+                        }
+                        
+                    }
+    
+                    if( consumidor != null ){
+                        Util.fechar( consumidor );
+                        consumidor = null;
                     }
                     
-                    for( Processador p : remocao ){
-                        p.interrupt();
-                    }
-                    
-                    remocao = null;
-                    
-                }else if( diferenca < 0 ){
-                    
-                    log.info( "Aumentando a quantidade de processos. Total = " + conf_processos );
-                    
-                    diferenca = - diferenca;
-                    Context contexto = processadores.get( 0 ).contexto;
-                    Map<String,Conexao> conexoes = carregarConfCopaibas();
-                    
-                    for( int i = 0; i < diferenca; i++ ){
-                        Processador p = new Processador( contexto, conexoes );
-                        processadores.add( p );
-                        p.start();
-                    }
+                    if( e instanceof InterruptedException ) return;
                     
                 }
-                
+        
             }
-
-            ultimaDataConfGeral = data;
-            
-        }
-        
-    }
-    
-    private static Map<String,Conexao> carregarConfCopaibas() throws IOException {
-
-        File arquivo = new File( configuracao, "copaibas.conf" );
-        Properties prop = new Properties();
-        
-        if( arquivo.exists() ){
-            try( FileInputStream fis = new FileInputStream( arquivo ) ){
-                prop.load( fis );
-            }
-        }else{
-            try( FileWriter fw = new FileWriter( arquivo ) ){
-                fw.write( "# Copaibas\n\n" );
-                fw.write( "# nome=\"endereço\",\"porta\",\"segurança: TLS, SSL ou vazio\",\"ignorar certificado: S ou N\",\"usuario\",\"senha\"\n" );
-                fw.write( "# exemplo1=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\"\n" );
-                fw.write( "# exemplo2=\"127.0.0.1\",\"8884\",\"TLS\",\"S\",\"maria\",\"12345678\"\n\n" );
-                fw.write( "copaiba=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\"\n" );
-            }
-        }
-        
-        Map<String,Conexao> conexoes = new HashMap<>();
-        for( Object nome : prop.keySet() ){
-            conexoes.put( nome.toString(), new Conexao( prop.get( nome ).toString() ) );
-        }
-        return conexoes;
-        
-    }
-    
-    private static void verificarConfCopaibas() throws IOException {
-        
-        long data = new File( configuracao, "copaibas.conf" ).lastModified();
-        
-        if( data > ultimaDataConfCopaibas ){
-            
-            log.info( "Atualizando as Copaíbas." );
-            
-            Map<String,Conexao> novas = carregarConfCopaibas();
-            for( Processador p : processadores ){
-                p.atualizacao = novas;
-            }
-            
-            ultimaDataConfCopaibas = data;
             
         }
         
     }
     
     /**
-     * @param args Diretório de configurações.
+     * @param args [0] = Diretório de configurações.
      */
     public static void main( String[] args ) {
         
-        log.info( "Iniciando." );
-        
-        Context contexto     = null;
-        Socket  roteador     = null;
-        Socket  distribuidor = null;
+        Util.getLog().info( Util.getMensagem( "$unhadegato.iniciando" ) );
         
         try{
             
@@ -464,9 +259,9 @@ public class Concentrador {
                 if( ! args[0].isEmpty() ){
                     configuracao = new File( args[0] );
                     if( ! configuracao.isDirectory() ){
-                        String msg = "Informar corretamente o diretório de configurações.";
+                        String msg = Util.getMensagem( "$unhadegato.diretorio.incorreto" );
                         System.out.println( msg );
-                        log.error( msg );
+                        Util.getLog().error( msg );
                         System.exit( 1 );
                     }
                 }
@@ -476,90 +271,143 @@ public class Concentrador {
                 configuracao = new File( System.getProperty( "user.home" ) + File.separator + "unhadegato" );
                 configuracao.mkdirs();
             }
+    
+            Util.getLog().info( Util.getMensagem( "$unhadegato.diretorio.endereco", configuracao.getAbsolutePath() ) );
             
             /***********************/
+    
+            File confGeralArq = new File( configuracao, "unhadegato.conf" );
             
-            ultimaDataConfGeral    = new File( configuracao, "unhadegato.conf" ).lastModified();
-            ultimaDataConfCopaibas = new File( configuracao, "copaibas.conf" ).lastModified();
+            if( ! confGeralArq.exists() ){
+                try( FileWriter fw = new FileWriter( confGeralArq ) ){
+                    fw.write( "# Unha-de-gato\n\n" );
+                    fw.write( "porta=8885\n" );
+                    fw.write( "porta.segura=8886\n" );
+                    fw.write( "jks=unhadegato.jks\n" );
+                    fw.write( "jks.senha=123456\n" );
+                }
+            }
+    
+            Properties confGeral = new Properties();
             
-            /***********************/
-            
-            Properties conf = carregarConfGeral();
-            int conf_porta = Integer.parseInt( conf.getProperty( "porta" ) );
-            int conf_processos = Integer.parseInt( conf.getProperty( "processos" ) );
-            
-            /***********************/
-            
-            contexto = ZMQ.context( 1 );
-
-            log.info( "Iniciando roteador - tcp://*:" + conf_porta );
-            roteador = contexto.socket( ZMQ.ROUTER );
-            roteador.bind( "tcp://*:" + conf_porta );
-
-            log.info( "Iniciando distribuidor - inproc://unhadegato" );
-            distribuidor = contexto.socket( ZMQ.DEALER );
-            distribuidor.bind( "inproc://unhadegato" );
-            
-            /***********************/
-
-            log.info( "Iniciando processos. Total = " + conf_processos );
-            
-            Map<String,Conexao> conexoes = carregarConfCopaibas();
-            
-            for( int i = 0; i < conf_processos; i++ ){
-                Processador p = new Processador( contexto, conexoes );
-                processadores.add( p );
-                p.start();
+            try( FileInputStream fis = new FileInputStream( confGeralArq ) ){
+                confGeral.load( fis );
             }
             
+            String prop_porta        = confGeral.getProperty( "porta" );
+            String prop_porta_segura = confGeral.getProperty( "porta.segura" );
+            String prop_jks          = confGeral.getProperty( "jks" );
+            String prop_jks_senha    = confGeral.getProperty( "jks.senha" );
+            
+            if( StringUtil.tamanho( prop_porta        ) == 0 ) prop_porta        = "8885";
+            if( StringUtil.tamanho( prop_porta_segura ) == 0 ) prop_porta_segura = "8886";
+            if( StringUtil.tamanho( prop_jks          ) == 0 ) prop_jks          = "unhadegato.jks";
+            if( StringUtil.tamanho( prop_jks_senha    ) == 0 ) prop_jks_senha    = "123456";
+    
+            /***********************/
+    
+            Util.getLog().info( Util.getMensagem( "$copaiba.porta.normal.abrindo", prop_porta ) );
+            
+            servidor1 = new SocketServidor( Integer.parseInt( prop_porta ), false );
+            
+            File jks = new File( prop_jks );
+            if( ! jks.isAbsolute() ) jks = new File( configuracao.getAbsolutePath() + File.separator + prop_jks );
+    
+            if( jks.exists() ){
+    
+                try{
+                    
+                    Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
+        
+                    System.setProperty( "javax.net.ssl.keyStore", jks.getAbsolutePath() );
+                    System.setProperty( "javax.net.ssl.keyStorePassword", prop_jks_senha );
+        
+                    servidor2 = new SocketServidor( Integer.parseInt( prop_porta_segura ), true );
+                    
+                }catch( Exception e ){
+                    Util.getLog().error( e.getMessage(), e );
+                }
+    
+            }else{
+    
+                Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.fechada" ) );
+                
+            }
+    
             /***********************/
             
-            new ScheduledThreadPoolExecutor( 1 ).scheduleWithFixedDelay( new Runnable() {
+            new Thread() {
+    
+                File arquivo = new File( configuracao, "copaibas.conf" );
+                
+                long ultimaData = -1;
+                
                 @Override
                 public void run() {
-                    try{
-                        verificarConfCopaibas();
-                        verificarConfGeral();
-                    }catch( Exception e ){
-                        log.error( e.getMessage(), e );
+                    
+                    while( true ){
+    
+                        long data = arquivo.lastModified();
+    
+                        if( data > ultimaData ){
+                            executarCopaibas( arquivo );
+                            ultimaData = data;
+                        }
+    
+                        try{
+                            Thread.sleep( 5 * 1000 );
+                        }catch( InterruptedException e ){
+                            return;
+                        }
+    
                     }
+    
                 }
-            }, 30, 30, TimeUnit.SECONDS );
+                
+            }.start();
             
             /***********************/
             
-            log.info( "Esperando conexões." );
-            log.info( "Intervalo de espera = " + intervalo + " ms" );
+            Util.getLog().info( Util.getMensagem( "$unhadegato.conexao.esperando" ) );
             
-            ZMQ.proxy( roteador, distribuidor, null );
+            Portal portal1 = new Portal( servidor1 );
+            portal1.start();
+            
+            if( servidor2 != null && servidor2.isAberto() ){
+                new Portal( servidor2 ).start();
+            }
+            
+            portal1.join();
             
             /***********************/
             
         }catch( Exception e ){
             
-            log.error( e.getMessage(), e );
+            Util.getLog().error( e.getMessage(), e );
             
         }finally{
             
             try{
-                if( roteador != null ) roteador.close();
+                if( servidor1 != null ) servidor1.fechar();
             }catch( Exception e ){
             }finally{
-                roteador = null;
+                servidor1 = null;
             }
-            
+    
             try{
-                if( distribuidor != null ) distribuidor.close();
+                if( servidor2 != null ) servidor2.fechar();
             }catch( Exception e ){
             }finally{
-                distribuidor = null;
+                servidor2 = null;
             }
-            
-            try{
-                if( contexto != null ) contexto.term();
-            }catch( Exception e ){
-            }finally{
-                contexto = null;
+    
+            for( CopaibaGerenciador gerenciador : gerenciadores.values() ){
+                try{
+                    gerenciador.encerrar();
+                }catch( Exception e ){
+                    gerenciadores.clear();
+                    gerenciadores = null;
+                }
             }
             
         }

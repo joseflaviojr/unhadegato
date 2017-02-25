@@ -31,6 +31,7 @@ RUN chmod -R 755 ${UNHADEGATO}/bin && \
 WORKDIR ${UNHADEGATO}/bin
 
 EXPOSE 8885
+EXPOSE 8886
 
 CMD ["unhadegato.sh", "/volume/conf"]
 
