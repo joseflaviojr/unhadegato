@@ -49,7 +49,6 @@ import com.joseflavio.urucum.texto.StringUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -170,8 +169,9 @@ public class Concentrador {
         public void run() {
     
             Consumidor consumidor = null;
-            String nome = null;
-            boolean erroGrave = false;
+            String     nome       = null;
+            String     resultado  = null;
+            boolean    erroGrave  = false;
     
             while( true ){
     
@@ -191,19 +191,27 @@ public class Concentrador {
                     consumidor.setTempoEspera( 600 );
     
                     nome = Util.receberString( consumidor.getInputStream() );
+                    resultado = null;
                     
-                    CopaibaGerenciador gerenciador = gerenciadores.get( nome );
+                    if( nome.equals( "##Unha-de-gato.VERSAO" ) ){
+                        resultado = UnhaDeGato.VERSAO;
+                    }
                     
-                    if( gerenciador != null ){
-                        
-                        gerenciador.inserirConsumidor( consumidor );
-                        
-                    }else{
+                    if( resultado == null ){
     
-                        Util.enviarTexto(
-                            consumidor.getOutputStream(),
-                            "Unha-de-gato.ERRO@" + IllegalArgumentException.class.getName() + "@" + Util.getMensagem( "$copaiba.desconhecida", nome )
-                        );
+                        CopaibaGerenciador gerenciador = gerenciadores.get( nome );
+    
+                        if( gerenciador != null ){
+                            gerenciador.inserirConsumidor( consumidor );
+                        }else{
+                            resultado = "##Unha-de-gato.ERRO@" + IllegalArgumentException.class.getName() + "@" + Util.getMensagem( "$copaiba.desconhecida", nome );
+                        }
+                        
+                    }
+                    
+                    if( resultado != null ){
+    
+                        Util.enviarTexto( consumidor.getOutputStream(), resultado );
     
                         try{
                             consumidor.getInputStream().read();
@@ -214,7 +222,7 @@ public class Concentrador {
                         }
                         
                     }
-    
+                    
                 }catch( Exception e ){
                     
                     if( erroGrave ){
@@ -279,13 +287,27 @@ public class Concentrador {
             File confGeralArq = new File( configuracao, "unhadegato.conf" );
             
             if( ! confGeralArq.exists() ){
+                
                 try( FileWriter fw = new FileWriter( confGeralArq ) ){
+                    
                     fw.write( "# Unha-de-gato\n\n" );
+    
+                    fw.write( "# java.net.Socket\n" );
                     fw.write( "porta=8885\n" );
-                    fw.write( "porta.segura=8886\n" );
-                    fw.write( "jks=unhadegato.jks\n" );
-                    fw.write( "jks.senha=123456\n" );
+                    fw.write( "porta.segura=8886\n\n" );
+    
+                    fw.write( "# javax.net.ssl.keyStore\n" );
+                    fw.write( "seguranca.privada=servidor.jks\n" );
+                    fw.write( "seguranca.privada.senha=123456\n" );
+                    fw.write( "seguranca.privada.tipo=JKS\n\n" );
+    
+                    fw.write( "# javax.net.ssl.trustStore\n" );
+                    fw.write( "seguranca.publica=cliente.jks\n" );
+                    fw.write( "seguranca.publica.senha=123456\n" );
+                    fw.write( "seguranca.publica.tipo=JKS\n" );
+                    
                 }
+                
             }
     
             Properties confGeral = new Properties();
@@ -294,15 +316,43 @@ public class Concentrador {
                 confGeral.load( fis );
             }
             
-            String prop_porta        = confGeral.getProperty( "porta" );
-            String prop_porta_segura = confGeral.getProperty( "porta.segura" );
-            String prop_jks          = confGeral.getProperty( "jks" );
-            String prop_jks_senha    = confGeral.getProperty( "jks.senha" );
+            String prop_porta         = confGeral.getProperty( "porta" );
+            String prop_porta_segura  = confGeral.getProperty( "porta.segura" );
+            String prop_seg_pri       = confGeral.getProperty( "seguranca.privada" );
+            String prop_seg_pri_senha = confGeral.getProperty( "seguranca.privada.senha" );
+            String prop_seg_pri_tipo  = confGeral.getProperty( "seguranca.privada.tipo" );
+            String prop_seg_pub       = confGeral.getProperty( "seguranca.publica" );
+            String prop_seg_pub_senha = confGeral.getProperty( "seguranca.publica.senha" );
+            String prop_seg_pub_tipo  = confGeral.getProperty( "seguranca.publica.tipo" );
             
-            if( StringUtil.tamanho( prop_porta        ) == 0 ) prop_porta        = "8885";
-            if( StringUtil.tamanho( prop_porta_segura ) == 0 ) prop_porta_segura = "8886";
-            if( StringUtil.tamanho( prop_jks          ) == 0 ) prop_jks          = "unhadegato.jks";
-            if( StringUtil.tamanho( prop_jks_senha    ) == 0 ) prop_jks_senha    = "123456";
+            if( StringUtil.tamanho( prop_porta         ) == 0 ) prop_porta         = "8885";
+            if( StringUtil.tamanho( prop_porta_segura  ) == 0 ) prop_porta_segura  = "8886";
+            if( StringUtil.tamanho( prop_seg_pri       ) == 0 ) prop_seg_pri       = "servidor.jks";
+            if( StringUtil.tamanho( prop_seg_pri_senha ) == 0 ) prop_seg_pri_senha = "123456";
+            if( StringUtil.tamanho( prop_seg_pri_tipo  ) == 0 ) prop_seg_pri_tipo  = "JKS";
+            if( StringUtil.tamanho( prop_seg_pub       ) == 0 ) prop_seg_pub       = "cliente.jks";
+            if( StringUtil.tamanho( prop_seg_pub_senha ) == 0 ) prop_seg_pub_senha = "123456";
+            if( StringUtil.tamanho( prop_seg_pub_tipo  ) == 0 ) prop_seg_pub_tipo  = "JKS";
+    
+            /***********************/
+    
+            File seg_pri = new File( prop_seg_pri );
+            if( ! seg_pri.isAbsolute() ) seg_pri = new File( configuracao.getAbsolutePath() + File.separator + prop_seg_pri );
+    
+            if( seg_pri.exists() ){
+                System.setProperty( "javax.net.ssl.keyStore",         seg_pri.getAbsolutePath() );
+                System.setProperty( "javax.net.ssl.keyStorePassword", prop_seg_pri_senha );
+                System.setProperty( "javax.net.ssl.keyStoreType",     prop_seg_pri_tipo );
+            }
+            
+            File seg_pub = new File( prop_seg_pub );
+            if( ! seg_pub.isAbsolute() ) seg_pub = new File( configuracao.getAbsolutePath() + File.separator + prop_seg_pub );
+    
+            if( seg_pub.exists() ){
+                System.setProperty( "javax.net.ssl.trustStore",         seg_pub.getAbsolutePath() );
+                System.setProperty( "javax.net.ssl.trustStorePassword", prop_seg_pub_senha );
+                System.setProperty( "javax.net.ssl.trustStoreType",     prop_seg_pub_tipo );
+            }
     
             /***********************/
     
@@ -310,28 +360,14 @@ public class Concentrador {
             
             servidor1 = new SocketServidor( Integer.parseInt( prop_porta ), false );
             
-            File jks = new File( prop_jks );
-            if( ! jks.isAbsolute() ) jks = new File( configuracao.getAbsolutePath() + File.separator + prop_jks );
-    
-            if( jks.exists() ){
-    
-                try{
-                    
-                    Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
-        
-                    System.setProperty( "javax.net.ssl.keyStore", jks.getAbsolutePath() );
-                    System.setProperty( "javax.net.ssl.keyStorePassword", prop_jks_senha );
-        
-                    servidor2 = new SocketServidor( Integer.parseInt( prop_porta_segura ), true );
-                    
-                }catch( Exception e ){
-                    Util.getLog().error( e.getMessage(), e );
-                }
-    
-            }else{
-    
-                Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.fechada" ) );
+            try{
                 
+                Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
+    
+                servidor2 = new SocketServidor( Integer.parseInt( prop_porta_segura ), true );
+                
+            }catch( Exception e ){
+                Util.getLog().error( e.getMessage(), e );
             }
     
             /***********************/

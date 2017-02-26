@@ -53,6 +53,11 @@ import java.io.*;
  */
 public class UnhaDeGato implements Closeable {
 	
+	/**
+	 * Versão da {@link UnhaDeGato}.
+	 */
+	public static final String VERSAO = "1";
+	
 	private String endereco;
 	
 	private int porta;
@@ -143,6 +148,13 @@ public class UnhaDeGato implements Closeable {
 		return enviar( copaiba, 6, classe, estado, metodo );
 	}
 	
+	/**
+	 * Consulta a {@link UnhaDeGato#VERSAO} implementada pelo {@link Concentrador}.
+	 */
+	public String versao() throws RuntimeException, IOException {
+		return enviar( "##Unha-de-gato.VERSAO", 0 );
+	}
+	
 	private String enviar( String copaiba, int requisicao, String... parametros ) throws RuntimeException, IOException {
 		
 		Consumidor consumidor = null;
@@ -177,8 +189,8 @@ public class UnhaDeGato implements Closeable {
 			}catch( Exception e ){
 			}
 			
-			// Unha-de-gato.ERRO@Classe@Mensagem
-			if( retorno != null && retorno.startsWith( "Unha-de-gato.ERRO" ) ){
+			// ##Unha-de-gato.ERRO@Classe@Mensagem
+			if( retorno != null && retorno.startsWith( "##Unha-de-gato.ERRO" ) ){
 				String[] p = retorno.split( "@" );
 				dispararErro( p[1], p[2] );
 			}

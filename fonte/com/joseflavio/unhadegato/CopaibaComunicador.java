@@ -217,7 +217,7 @@ class CopaibaComunicador extends Thread {
                             if( tentativas == 1 ) continue;
                         }
                     }
-                    resultado = "Unha-de-gato.ERRO@" + e.getClass().getName() + "@" + e.getMessage();
+                    resultado = "##Unha-de-gato.ERRO@" + e.getClass().getName() + "@" + e.getMessage();
                 }
     
                 // Resposta
@@ -228,7 +228,7 @@ class CopaibaComunicador extends Thread {
                 
                 try{
                     is.read();
-                }catch( Exception f ){
+                }catch( Exception e ){
                 }finally{
                     Util.fechar( consumidor );
                     consumidor = null;
