@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
@@ -137,12 +138,15 @@ public class Concentrador {
                 }
     
             }
-            
-            for( String nome : gerenciadores.keySet() ){
+    
+            Iterator<CopaibaGerenciador> it = gerenciadores.values().iterator();
+            while( it.hasNext() ){
+                CopaibaGerenciador gerenciador = it.next();
+                String nome = gerenciador.getNome();
                 if( ! props.containsKey( nome ) ){
                     try{
                         Util.getLog().info( Util.getMensagem( "$copaiba.encerrando", nome ) );
-                        CopaibaGerenciador gerenciador = (CopaibaGerenciador) props.remove( nome );
+                        it.remove();
                         gerenciador.encerrar();
                         Util.getLog().info( Util.getMensagem( "$copaiba.encerrada", nome ) );
                     }catch( Exception e ){
