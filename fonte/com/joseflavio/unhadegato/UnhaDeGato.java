@@ -259,4 +259,20 @@ public class UnhaDeGato implements Closeable {
 		fechar();
 	}
 	
+	public String getEndereco() {
+		return endereco;
+	}
+	
+	public int getPorta() {
+		return porta;
+	}
+	
+	public boolean isSegura() {
+		return segura;
+	}
+	
+	public boolean isIgnorarCertificado() {
+		return ignorarCertificado;
+	}
+	
 }
