@@ -118,7 +118,7 @@ task distExe << {
     def nomeJar = archivesBaseName + "-" + version + ".jar"
     comando << "#!/bin/sh\n\n"
     comando << "java -server -XX:+UseConcMarkSweepGC -XX:+TieredCompilation "
-    comando << "-XX:+AggressiveOpts -XX:+UseBiasedLocking -XX:+UseNUMA "
+    comando << "-XX:+AggressiveOpts -XX:+UseBiasedLocking "
     comando << "-jar $nomeJar \"\$@\"\n"
 }
 
