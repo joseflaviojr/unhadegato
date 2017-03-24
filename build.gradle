@@ -13,7 +13,7 @@ String descricao = "Concentrador de Copaíbas."
 
 group = "com.joseflavio"
 archivesBaseName = "unhadegato"
-version = "1.0-A10"
+version = "1.0-A11"
 
 //------------------------------------------------------
 
@@ -56,9 +56,9 @@ repositories {
 
 dependencies {
     compile fileTree(dir:"biblioteca", include:["*.jar"])
-    compile "com.joseflavio:copaiba:1.0-A7"
-    compile "org.apache.logging.log4j:log4j-api:2.8"
-    compile "org.apache.logging.log4j:log4j-core:2.8"
+    compile "com.joseflavio:copaiba:1.0-A8"
+    compile "org.apache.logging.log4j:log4j-api:2.8.1"
+    compile "org.apache.logging.log4j:log4j-core:2.8.1"
     testCompile "junit:junit:4.12"
 }
 

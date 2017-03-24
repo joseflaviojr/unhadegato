@@ -45,6 +45,8 @@ import com.joseflavio.urucum.comunicacao.Consumidor;
 import com.joseflavio.urucum.comunicacao.Servidor;
 import com.joseflavio.urucum.comunicacao.SocketServidor;
 import com.joseflavio.urucum.texto.StringUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,6 +68,8 @@ public class Concentrador {
     private static Servidor servidor2 = null;
     
     private static Map<String, CopaibaGerenciador> gerenciadores = new HashMap<>();
+    
+    private static final Logger log = LogManager.getLogger( Concentrador.class.getPackage().getName() );
     
     /**
      * {@link CopaibaGerenciador#iniciar() Iniciar}, {@link CopaibaGerenciador#atualizar(String, int, boolean, boolean, String, String, int) atualizar}
@@ -111,30 +115,30 @@ public class Concentrador {
                     CopaibaGerenciador gerenciador = gerenciadores.get( nome );
         
                     if( gerenciador == null ){
-                        Util.getLog().info( Util.getMensagem( "$copaiba.iniciando", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.iniciando", nome ) );
                         gerenciador = new CopaibaGerenciador( nome, endereco, porta, segura, ignorarCert, usuario, senha, conexoes );
                         gerenciadores.put( nome, gerenciador );
                         gerenciador.iniciar();
-                        Util.getLog().info( Util.getMensagem( "$copaiba.iniciada", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.iniciada", nome ) );
                     }else{
-                        Util.getLog().info( Util.getMensagem( "$copaiba.verificando", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.verificando", nome ) );
                         if( gerenciador.atualizar( endereco, porta, segura, ignorarCert, usuario, senha, conexoes ) ){
-                            Util.getLog().info( Util.getMensagem( "$copaiba.atualizada", nome ) );
+                            log.info( Util.getMensagem( "$copaiba.atualizada", nome ) );
                         }else{
-                            Util.getLog().info( Util.getMensagem( "$copaiba.inalterada", nome ) );
+                            log.info( Util.getMensagem( "$copaiba.inalterada", nome ) );
                         }
                     }
     
                     try( CopaibaConexao cc = new CopaibaConexao( endereco, porta, segura, ignorarCert, usuario, senha ) ){
                         cc.verificar();
-                        Util.getLog().info( Util.getMensagem( "$copaiba.conexao.teste.exito", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.conexao.teste.exito", nome ) );
                     }catch( Exception e ){
-                        Util.getLog().info( Util.getMensagem( "$copaiba.conexao.teste.erro", nome, e.getMessage() ) );
-                        Util.getLog().error( e.getMessage(), e );
+                        log.info( Util.getMensagem( "$copaiba.conexao.teste.erro", nome, e.getMessage() ) );
+                        log.error( e.getMessage(), e );
                     }
                     
                 }catch( Exception e ){
-                    Util.getLog().error( e.getMessage(), e );
+                    log.error( e.getMessage(), e );
                 }
     
             }
@@ -145,18 +149,18 @@ public class Concentrador {
                 String nome = gerenciador.getNome();
                 if( ! props.containsKey( nome ) ){
                     try{
-                        Util.getLog().info( Util.getMensagem( "$copaiba.encerrando", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.encerrando", nome ) );
                         it.remove();
                         gerenciador.encerrar();
-                        Util.getLog().info( Util.getMensagem( "$copaiba.encerrada", nome ) );
+                        log.info( Util.getMensagem( "$copaiba.encerrada", nome ) );
                     }catch( Exception e ){
-                        Util.getLog().error( e.getMessage(), e );
+                        log.error( e.getMessage(), e );
                     }
                 }
             }
             
         }catch( Exception e ){
-            Util.getLog().error( e.getMessage(), e );
+            log.error( e.getMessage(), e );
         }
     
     }
@@ -231,7 +235,7 @@ public class Concentrador {
                     
                     if( erroGrave ){
                         
-                        Util.getLog().error( e.getMessage(), e );
+                        log.error( e.getMessage(), e );
                         
                         try{
                             Thread.sleep( 1 * 1000 );
@@ -261,7 +265,7 @@ public class Concentrador {
      */
     public static void main( String[] args ) {
         
-        Util.getLog().info( Util.getMensagem( "$unhadegato.iniciando" ) );
+        log.info( Util.getMensagem( "$unhadegato.iniciando" ) );
         
         try{
             
@@ -273,7 +277,7 @@ public class Concentrador {
                     if( ! configuracao.isDirectory() ){
                         String msg = Util.getMensagem( "$unhadegato.diretorio.incorreto" );
                         System.out.println( msg );
-                        Util.getLog().error( msg );
+                        log.error( msg );
                         System.exit( 1 );
                     }
                 }
@@ -284,7 +288,7 @@ public class Concentrador {
                 configuracao.mkdirs();
             }
     
-            Util.getLog().info( Util.getMensagem( "$unhadegato.diretorio.endereco", configuracao.getAbsolutePath() ) );
+            log.info( Util.getMensagem( "$unhadegato.diretorio.endereco", configuracao.getAbsolutePath() ) );
             
             /***********************/
     
@@ -360,18 +364,18 @@ public class Concentrador {
     
             /***********************/
     
-            Util.getLog().info( Util.getMensagem( "$copaiba.porta.normal.abrindo", prop_porta ) );
+            log.info( Util.getMensagem( "$copaiba.porta.normal.abrindo", prop_porta ) );
             
             servidor1 = new SocketServidor( Integer.parseInt( prop_porta ), false );
             
             try{
                 
-                Util.getLog().info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
+                log.info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
     
                 servidor2 = new SocketServidor( Integer.parseInt( prop_porta_segura ), true );
                 
             }catch( Exception e ){
-                Util.getLog().error( e.getMessage(), e );
+                log.error( e.getMessage(), e );
             }
     
             /***********************/
@@ -408,7 +412,7 @@ public class Concentrador {
             
             /***********************/
             
-            Util.getLog().info( Util.getMensagem( "$unhadegato.conexao.esperando" ) );
+            log.info( Util.getMensagem( "$unhadegato.conexao.esperando" ) );
             
             Portal portal1 = new Portal( servidor1 );
             portal1.start();
@@ -423,7 +427,7 @@ public class Concentrador {
             
         }catch( Exception e ){
             
-            Util.getLog().error( e.getMessage(), e );
+            log.error( e.getMessage(), e );
             
         }finally{
             

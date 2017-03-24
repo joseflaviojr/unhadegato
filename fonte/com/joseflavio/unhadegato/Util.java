@@ -44,8 +44,6 @@ import com.joseflavio.copaiba.CopaibaConexao;
 import com.joseflavio.urucum.arquivo.ResourceBundleCharsetControl;
 import com.joseflavio.urucum.comunicacao.Consumidor;
 import com.joseflavio.urucum.texto.StringUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -58,24 +56,10 @@ import java.util.ResourceBundle;
  */
 class Util {
     
-    private static final Logger log = LogManager.getLogger( Concentrador.class.getPackage().getName() );
-    
     private static ResourceBundle resourceBundle;
     
     static {
-    
-        try{
-            
-            resourceBundle = ResourceBundle.getBundle( "UnhaDeGato", new ResourceBundleCharsetControl( "UTF-8" ) );
-            
-        }catch( Exception e ){
-            log.error( e.getMessage(), e );
-        }
-    
-    }
-    
-    public static Logger getLog() {
-        return log;
+        resourceBundle = ResourceBundle.getBundle( "UnhaDeGato", new ResourceBundleCharsetControl( "UTF-8" ) );
     }
     
     public static ResourceBundle getResourceBundle() {

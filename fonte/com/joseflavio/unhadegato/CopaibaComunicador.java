@@ -55,6 +55,8 @@ class CopaibaComunicador extends Thread {
     
     private CopaibaGerenciador gerenciador;
     
+    private boolean interrompida = false;
+    
     public CopaibaComunicador( CopaibaGerenciador gerenciador ) {
         this.gerenciador = gerenciador;
     }
@@ -77,7 +79,7 @@ class CopaibaComunicador extends Thread {
                 
                 // Interrupção
                 
-                if( isInterrupted() ){
+                if( interrompida ){
                     if( consumidor == null ){
                         Util.fechar( copaiba );
                         copaiba = null;
@@ -98,15 +100,20 @@ class CopaibaComunicador extends Thread {
                 // Copaíba
                 
                 if( copaiba == null ){
-                    copaiba = new CopaibaConexao(
-                        gerenciador.getEndereco(),
-                        gerenciador.getPorta(),
-                        gerenciador.isSegura(),
-                        gerenciador.isIgnorarCertificado(),
-                        Modo.JAVA,
-                        gerenciador.getUsuario(),
-                        gerenciador.getSenha()
-                    );
+                    try{
+                        copaiba = new CopaibaConexao(
+                            gerenciador.getEndereco(),
+                            gerenciador.getPorta(),
+                            gerenciador.isSegura(),
+                            gerenciador.isIgnorarCertificado(),
+                            Modo.JAVA,
+                            gerenciador.getUsuario(),
+                            gerenciador.getSenha()
+                        );
+                    }catch( Exception e ){
+                        Thread.sleep( 2000 );
+                        continue;
+                    }
                 }
                 
                 // Consumidor
@@ -121,9 +128,8 @@ class CopaibaComunicador extends Thread {
     
                 if( consumidor == null ){
                     try{
-                        Thread.sleep( 50 );
+                        Thread.sleep( 40 );
                     }catch( InterruptedException f ){
-                        interrupt();
                     }finally{
                         continue;
                     }
@@ -233,9 +239,9 @@ class CopaibaComunicador extends Thread {
                     Util.fechar( consumidor );
                     consumidor = null;
                 }
-                
-            }catch( Exception e ){
     
+            }catch( Exception e ){
+                
                 if( copaiba != null ){
                     try{
                         copaiba.verificar();
@@ -252,16 +258,16 @@ class CopaibaComunicador extends Thread {
                     }
                 }
                 
-                try{
-                    Thread.sleep( 100 );
-                }catch( InterruptedException f ){
-                    interrupt();
-                }
-                
             }
     
         }
         
+    }
+    
+    @Override
+    public void interrupt() {
+        interrompida = true;
+        super.interrupt();
     }
     
 }
