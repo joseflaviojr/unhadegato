@@ -45,12 +45,11 @@ import com.joseflavio.urucum.comunicacao.Consumidor;
 import com.joseflavio.urucum.comunicacao.Servidor;
 import com.joseflavio.urucum.comunicacao.SocketServidor;
 import com.joseflavio.urucum.texto.StringUtil;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -63,9 +62,6 @@ import java.util.Properties;
 public class Concentrador {
     
     private static File configuracao;
-    
-    private static Servidor servidor1 = null;
-    private static Servidor servidor2 = null;
     
     private static Map<String, CopaibaGerenciador> gerenciadores = new HashMap<>();
     
@@ -81,12 +77,11 @@ public class Concentrador {
         try{
             
             if( ! arquivo.exists() ){
-                try( FileWriter fw = new FileWriter( arquivo ) ){
-                    fw.write( "# Copaibas\n\n" );
-                    fw.write( "# Nome=\"Endereço\",\"Porta\",\"Segurança: TLS, SSL ou vazio\",\"Ignorar Certificado: S ou N\",\"Usuario\",\"Senha\"[,\"Conexoes\"]\n" );
-                    fw.write( "# exemplo1=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\",\"10\"\n" );
-                    fw.write( "# exemplo2=\"127.0.0.1\",\"8884\",\"TLS\",\"S\",\"maria\",\"12345678\",\"2\"\n\n" );
-                    fw.write( "copaiba=\"localhost\",\"8884\",\"\",\"N\",\"jose\",\"12345678\",\"2\"\n" );
+                try(
+                    InputStream  is = Concentrador.class.getResourceAsStream( "/copaibas.conf" );
+                    OutputStream os = new FileOutputStream( arquivo );
+                ){
+                    IOUtils.copy( is, os );
                 }
             }
     
@@ -177,35 +172,23 @@ public class Concentrador {
         public void run() {
     
             Consumidor consumidor = null;
-            String     nome       = null;
-            String     resultado  = null;
-            boolean    erroGrave  = false;
     
             while( true ){
     
                 try{
-    
-                    erroGrave = false;
-    
-                    try{
-                        
-                        consumidor = servidor.aceitar();
-    
-                    }catch( Exception e ){
-                        erroGrave = true;
-                        throw e;
-                    }
+                    
+                    consumidor = servidor.aceitar();
     
                     consumidor.setTempoEspera( 600 );
     
-                    nome = Util.receberString( consumidor.getInputStream() );
-                    resultado = null;
+                    String nome = Util.receberString( consumidor.getInputStream() );
+                    String resultado = null;
                     
                     if( nome.equals( "##Unha-de-gato.VERSAO" ) ){
+                        
                         resultado = UnhaDeGato.VERSAO;
-                    }
-                    
-                    if( resultado == null ){
+                        
+                    }else{
     
                         CopaibaGerenciador gerenciador = gerenciadores.get( nome );
     
@@ -233,18 +216,6 @@ public class Concentrador {
                     
                 }catch( Exception e ){
                     
-                    if( erroGrave ){
-                        
-                        log.error( e.getMessage(), e );
-                        
-                        try{
-                            Thread.sleep( 1 * 1000 );
-                        }catch( InterruptedException f ){
-                            return;
-                        }
-                        
-                    }
-    
                     if( consumidor != null ){
                         Util.fechar( consumidor );
                         consumidor = null;
@@ -295,27 +266,12 @@ public class Concentrador {
             File confGeralArq = new File( configuracao, "unhadegato.conf" );
             
             if( ! confGeralArq.exists() ){
-                
-                try( FileWriter fw = new FileWriter( confGeralArq ) ){
-                    
-                    fw.write( "# Unha-de-gato\n\n" );
-    
-                    fw.write( "# java.net.Socket\n" );
-                    fw.write( "porta=8885\n" );
-                    fw.write( "porta.segura=8886\n\n" );
-    
-                    fw.write( "# javax.net.ssl.keyStore\n" );
-                    fw.write( "seguranca.privada=servidor.jks\n" );
-                    fw.write( "seguranca.privada.senha=123456\n" );
-                    fw.write( "seguranca.privada.tipo=JKS\n\n" );
-    
-                    fw.write( "# javax.net.ssl.trustStore\n" );
-                    fw.write( "seguranca.publica=cliente.jks\n" );
-                    fw.write( "seguranca.publica.senha=123456\n" );
-                    fw.write( "seguranca.publica.tipo=JKS\n" );
-                    
+                try(
+                    InputStream  is = Concentrador.class.getResourceAsStream( "/unhadegato.conf" );
+                    OutputStream os = new FileOutputStream( confGeralArq );
+                ){
+                    IOUtils.copy( is, os );
                 }
-                
             }
     
             Properties confGeral = new Properties();
@@ -363,22 +319,6 @@ public class Concentrador {
             }
     
             /***********************/
-    
-            log.info( Util.getMensagem( "$copaiba.porta.normal.abrindo", prop_porta ) );
-            
-            servidor1 = new SocketServidor( Integer.parseInt( prop_porta ), false );
-            
-            try{
-                
-                log.info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
-    
-                servidor2 = new SocketServidor( Integer.parseInt( prop_porta_segura ), true );
-                
-            }catch( Exception e ){
-                log.error( e.getMessage(), e );
-            }
-    
-            /***********************/
             
             new Thread() {
     
@@ -411,15 +351,17 @@ public class Concentrador {
             }.start();
             
             /***********************/
-            
+    
             log.info( Util.getMensagem( "$unhadegato.conexao.esperando" ) );
+    
+            log.info( Util.getMensagem( "$copaiba.porta.normal.abrindo", prop_porta ) );
+            Portal portal1 = new Portal( new SocketServidor( Integer.parseInt( prop_porta ), false, true ) );
+    
+            log.info( Util.getMensagem( "$copaiba.porta.segura.abrindo", prop_porta_segura ) );
+            Portal portal2 = new Portal( new SocketServidor( Integer.parseInt( prop_porta_segura ), true, true ) );
             
-            Portal portal1 = new Portal( servidor1 );
             portal1.start();
-            
-            if( servidor2 != null && servidor2.isAberto() ){
-                new Portal( servidor2 ).start();
-            }
+            portal2.start();
             
             portal1.join();
             
@@ -430,29 +372,10 @@ public class Concentrador {
             log.error( e.getMessage(), e );
             
         }finally{
-            
-            try{
-                if( servidor1 != null ) servidor1.fechar();
-            }catch( Exception e ){
-            }finally{
-                servidor1 = null;
-            }
     
-            try{
-                if( servidor2 != null ) servidor2.fechar();
-            }catch( Exception e ){
-            }finally{
-                servidor2 = null;
-            }
-    
-            for( CopaibaGerenciador gerenciador : gerenciadores.values() ){
-                try{
-                    gerenciador.encerrar();
-                }catch( Exception e ){
-                    gerenciadores.clear();
-                    gerenciadores = null;
-                }
-            }
+            for( CopaibaGerenciador gerenciador : gerenciadores.values() ) gerenciador.encerrar();
+            gerenciadores.clear();
+            gerenciadores = null;
             
         }
         

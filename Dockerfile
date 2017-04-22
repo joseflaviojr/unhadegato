@@ -21,7 +21,6 @@ RUN mkdir -p ${UNHADEGATO}/bin && \
 
 ADD build/dist/*.jar ${UNHADEGATO}/bin/
 ADD build/dist/*.sh ${UNHADEGATO}/bin/
-# ADD build/dist/*.conf /volume/conf/
 
 RUN chmod -R 755 ${UNHADEGATO}/bin && \
     ln -s /volume/logs ${UNHADEGATO}/bin/log

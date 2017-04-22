@@ -43,6 +43,7 @@ import com.joseflavio.copaiba.Copaiba;
 import com.joseflavio.copaiba.CopaibaConexao;
 import com.joseflavio.urucum.arquivo.ResourceBundleCharsetControl;
 import com.joseflavio.urucum.comunicacao.Consumidor;
+import com.joseflavio.urucum.comunicacao.Servidor;
 import com.joseflavio.urucum.texto.StringUtil;
 
 import java.io.EOFException;
@@ -164,6 +165,15 @@ class Util {
         try{
             if( consumidor != null ){
                 consumidor.fechar();
+            }
+        }catch( Exception e ){
+        }
+    }
+    
+    public static void fechar( Servidor servidor ) {
+        try{
+            if( servidor != null ){
+                servidor.fechar();
             }
         }catch( Exception e ){
         }
