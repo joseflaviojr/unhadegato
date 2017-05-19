@@ -68,10 +68,10 @@ class Util {
     }
     
     /**
-     * @see StringUtil#formatarMensagem(ResourceBundle, String, Object...)
+     * @see StringUtil#formatar(ResourceBundle, String, Object...)
      */
     public static String getMensagem( String mensagem, Object... parametros ) {
-        return StringUtil.formatarMensagem( getResourceBundle(), mensagem, parametros );
+        return StringUtil.formatar( getResourceBundle(), mensagem, parametros );
     }
     
     /**
