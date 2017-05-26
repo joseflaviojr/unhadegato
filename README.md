@@ -6,7 +6,7 @@ Concentrator of [Copaíbas](http://joseflavio.com/copaiba).
 
 ## Versão Atual / Current Version
 
-1.0-A12
+1.0-A13
 
 Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
@@ -20,14 +20,14 @@ Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
 Download and compilation:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A12.zip
-    unzip 1.0-A12.zip
-    cd unhadegato-1.0-A12
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A13.zip
+    unzip 1.0-A13.zip
+    cd unhadegato-1.0-A13
     gradle dist
 
 Image:
 
-    docker build --force-rm -t joseflavio/unhadegato:1.0-A12 .
+    docker build --force-rm -t joseflavio/unhadegato:1.0-A13 .
 
 Volume:
 
@@ -35,7 +35,7 @@ Volume:
 
 Running:
 
-    docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A12
+    docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A13
 
 Configuration:
 
@@ -48,15 +48,15 @@ Log:
 Removal:
 
     docker rm -f unhadegato
-    docker rmi joseflavio/unhadegato:1.0-A12
+    docker rmi joseflavio/unhadegato:1.0-A13
 
 ## Servidor tradicional / Traditional server
 
 Download, compilation and running:
 
-    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A12.zip
-    unzip 1.0-A12.zip
-    cd unhadegato-1.0-A12
+    wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A13.zip
+    unzip 1.0-A13.zip
+    cd unhadegato-1.0-A13
     gradle dist
     cd build/dist
     ./unhadegato.sh
@@ -65,14 +65,14 @@ Download, compilation and running:
 
 Gradle:
 
-    compile 'com.joseflavio:unhadegato:1.0-A12'
+    compile 'com.joseflavio:unhadegato:1.0-A13'
 
 Maven:
 
     <dependency>
         <groupId>com.joseflavio</groupId>
         <artifactId>unhadegato</artifactId>
-        <version>1.0-A12</version>
+        <version>1.0-A13</version>
     </dependency>
 
 ## Desenvolvimento / Development
