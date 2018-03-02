@@ -1,8 +1,8 @@
 
 /*
- *  Copyright (C) 2016 José Flávio de Souza Dias Júnior
+ *  Copyright (C) 2016-2018 José Flávio de Souza Dias Júnior
  *
- *  This file is part of Unha-de-gato - <http://www.joseflavio.com/unhadegato/>.
+ *  This file is part of Unha-de-gato - <http://joseflavio.com/unhadegato/>.
  *
  *  Unha-de-gato is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -19,9 +19,9 @@
  */
 
 /*
- *  Direitos Autorais Reservados (C) 2016 José Flávio de Souza Dias Júnior
+ *  Direitos Autorais Reservados (C) 2016-2018 José Flávio de Souza Dias Júnior
  *
- *  Este arquivo é parte de Unha-de-gato - <http://www.joseflavio.com/unhadegato/>.
+ *  Este arquivo é parte de Unha-de-gato - <http://joseflavio.com/unhadegato/>.
  *
  *  Unha-de-gato é software livre: você pode redistribuí-lo e/ou modificá-lo
  *  sob os termos da Licença Pública Menos Geral GNU conforme publicada pela
