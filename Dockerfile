@@ -1,12 +1,9 @@
 #------------------------------
 
-# Unha-de-gato
+FROM openjdk:slim
 
-#------------------------------
-
-FROM java:8-jre-alpine
-
-MAINTAINER Jose Flavio de Souza Dias Junior <contato@joseflavio.com>
+LABEL description="Unha-de-gato 1.0-A16"
+LABEL maintainer="Jose Flavio de Souza Dias Junior <email@joseflavio.com>"
 
 #------------------------------
 
@@ -17,7 +14,7 @@ ENV PATH ${UNHADEGATO}/bin:$PATH
 
 RUN mkdir -p ${UNHADEGATO}/bin && \
     mkdir -p /volume/conf && \
-    mkdir -p /volume/logs
+    mkdir -p /volume/dados
 
 ADD build/dist/*.jar ${UNHADEGATO}/bin/
 ADD build/dist/*.sh ${UNHADEGATO}/bin/

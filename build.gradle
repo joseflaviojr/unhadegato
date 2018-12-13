@@ -13,7 +13,7 @@ String descricao = "Concentrador de Copaíbas."
 
 group = "com.joseflavio"
 archivesBaseName = "unhadegato"
-version = "1.0-A15"
+version = "1.0-A16"
 
 //------------------------------------------------------
 
@@ -23,7 +23,8 @@ version = "1.0-A15"
 "fonte",      // Código fonte: *.java
 "recurso",    // Anexos que serão embutidos no ".jar"
 "dist",       // Anexos da distribuição
-"projeto"     // Arquivos de projeto: doc, svg, psd, etc.
+"projeto",    // Arquivos de projeto: doc, svg, psd, etc.
+"rascunho"    // Arquivos temporários e descartáveis
 
 ].each { new File(it).mkdirs() }
 
@@ -56,10 +57,10 @@ repositories {
 
 dependencies {
     compile fileTree(dir:"biblioteca", include:["*.jar"])
-    compile "com.joseflavio:copaiba:1.0-A12"
+    compile "com.joseflavio:copaiba:1.0-A13"
     compile "org.apache.commons:commons-io:1.3.2"
-    compile "org.apache.logging.log4j:log4j-api:2.10.0"
-    compile "org.apache.logging.log4j:log4j-core:2.10.0"
+    compile "org.apache.logging.log4j:log4j-api:2.11.1"
+    compile "org.apache.logging.log4j:log4j-core:2.11.1"
     testCompile "junit:junit:4.12"
 }
 
@@ -112,15 +113,16 @@ task distDep(type: Copy, dependsOn: [jar]) {
     from configurations.compile
 }
 
-task distExe << {
-    def destino = new File( "build/exe" )
-    destino.mkdirs()
-    def comando = new File( "build/exe/" + archivesBaseName + ".sh" )
-    def nomeJar = archivesBaseName + "-" + version + ".jar"
-    comando << "#!/bin/sh\n\n"
-    comando << "java -server -XX:+UseConcMarkSweepGC -XX:+TieredCompilation "
-    comando << "-XX:+AggressiveOpts -XX:+UseBiasedLocking -Xmx1024m "
-    comando << "-jar $nomeJar \"\$@\"\n"
+task distExe {
+    doLast {
+        def destino = new File("build/exe")
+        destino.mkdirs()
+        def comando = new File("build/exe/" + archivesBaseName + ".sh")
+        def nomeJar = archivesBaseName + "-" + version + ".jar"
+        comando << "#!/bin/sh\n\n"
+        comando << "java -server -XX:+TieredCompilation -XX:+UseBiasedLocking -Xms48m -Xmx1024m "
+        comando << "-jar $nomeJar \"\$@\"\n"
+    }
 }
 
 task dist(type: Copy, dependsOn: [distDep, distExe]) {
@@ -180,7 +182,7 @@ uploadArchives {
           developer {
             id "joseflaviojr"
             name "José Flávio de Souza Dias Júnior"
-            email "contato@joseflavio.com"
+            email "email@joseflavio.com"
           }
         }
 
@@ -203,9 +205,11 @@ eclipse {
     }
 }
 
-eclipseJdt << {
-    file(".settings/org.eclipse.core.resources.prefs").text =
-        "eclipse.preferences.version=1\nencoding/<project>=" + codificacao
+eclipseJdt {
+    doLast {
+        file(".settings/org.eclipse.core.resources.prefs").text =
+            "eclipse.preferences.version=1\nencoding/<project>=" + codificacao
+    }
 }
 
 //------------------------------------------------------

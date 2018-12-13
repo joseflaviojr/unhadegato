@@ -14,7 +14,7 @@ A figura a seguir ilustra o esquema geral da arquitetura da Unha-de-gato:
 
 ## Versão Atual
 
-1.0-A15
+1.0-A16
 
 Padrão de versionamento: [JFV](http://joseflavio.com/jfv)
 
@@ -25,16 +25,16 @@ Seguem-se as instruções para instalar e executar a Unha-de-gato num container 
 Baixar e compilar:
 
 ```sh
-wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A15.zip
-unzip 1.0-A15.zip
-cd unhadegato-1.0-A15
+wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A16.zip
+unzip 1.0-A16.zip
+cd unhadegato-1.0-A16
 gradle dist
 ```
 
 Criar imagem:
 
 ```sh
-docker build --force-rm -t joseflavio/unhadegato:1.0-A15 .
+docker build --force-rm -t joseflavio/unhadegato:1.0-A16 .
 ```
 
 Criar volume de dados:
@@ -46,7 +46,7 @@ docker volume create --name unhadegato
 Executar pela primeira vez:
 
 ```sh
-docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A15
+docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A16
 ```
 
 > A Unha-de-gato será inicializada automaticamente no processo de boot, a não ser que seja voluntariamente parada: `docker stop unhadegato`.
@@ -70,7 +70,7 @@ tail /var/lib/docker/volumes/unhadegato/_data/logs/unhadegato.log -n 100
 * Docker >= 17.06
 * Git >= 2.8
 * Java >= 1.8
-* Gradle >= 3.1
+* Gradle >= 4.7
 
 ### Desinstalação
 
@@ -78,7 +78,7 @@ Desinstalar a Unha-de-gato por completo:
 
 ```sh
 docker rm -f unhadegato
-docker rmi joseflavio/unhadegato:1.0-A15
+docker rmi joseflavio/unhadegato:1.0-A16
 ```
 
 ## Execução Local e Temporária
@@ -86,9 +86,9 @@ docker rmi joseflavio/unhadegato:1.0-A15
 Baixar e compilar:
 
 ```sh
-wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A15.zip
-unzip 1.0-A15.zip
-cd unhadegato-1.0-A15
+wget https://github.com/joseflaviojr/unhadegato/archive/1.0-A16.zip
+unzip 1.0-A16.zip
+cd unhadegato-1.0-A16
 gradle dist
 ```
 
@@ -103,12 +103,12 @@ cd build/dist
 
 ## Como Usar no Lado do Cliente
 
-A Unha-de-gato está disponível como biblioteca Java no repositório [Maven](http://search.maven.org/#artifactdetails%7Ccom.joseflavio%7Cunhadegato%7C1.0-A15%7Cjar).
+A Unha-de-gato está disponível como biblioteca Java no repositório [Maven](http://search.maven.org/#artifactdetails%7Ccom.joseflavio%7Cunhadegato%7C1.0-A16%7Cjar).
 
 Gradle:
 
 ```
-compile 'com.joseflavio:unhadegato:1.0-A15'
+compile 'com.joseflavio:unhadegato:1.0-A16'
 ```
 
 Maven:
@@ -117,7 +117,7 @@ Maven:
 <dependency>
     <groupId>com.joseflavio</groupId>
     <artifactId>unhadegato</artifactId>
-    <version>1.0-A15</version>
+    <version>1.0-A16</version>
 </dependency>
 ```
 
@@ -144,7 +144,7 @@ gradle cleanIdea idea
 
 * Git >= 2.8
 * Java >= 1.8
-* Gradle >= 3.1
+* Gradle >= 4.7
 
 ## Compilação
 
@@ -156,7 +156,7 @@ gradle clean build
 
 ## Publicação
 
-Para compilar e publicar os arquivos finais do projeto no repositório [Maven](http://search.maven.org/#artifactdetails%7Ccom.joseflavio%7Cunhadegato%7C1.0-A15%7Cjar), executar no terminal:
+Para compilar e publicar os arquivos finais do projeto no repositório [Maven](http://search.maven.org/#artifactdetails%7Ccom.joseflavio%7Cunhadegato%7C1.0-A16%7Cjar), executar no terminal:
 
 ```sh
 gradle clean uploadArchives
