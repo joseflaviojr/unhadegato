@@ -14,7 +14,8 @@ ENV PATH ${UNHADEGATO}/bin:$PATH
 
 RUN mkdir -p ${UNHADEGATO}/bin && \
     mkdir -p /volume/conf && \
-    mkdir -p /volume/dados
+    mkdir -p /volume/dados && \
+    mkdir -p /volume/logs
 
 ADD build/dist/*.jar ${UNHADEGATO}/bin/
 ADD build/dist/*.sh ${UNHADEGATO}/bin/

@@ -120,7 +120,7 @@ task distExe {
         def comando = new File("build/exe/" + archivesBaseName + ".sh")
         def nomeJar = archivesBaseName + "-" + version + ".jar"
         comando << "#!/bin/sh\n\n"
-        comando << "java -server -XX:+TieredCompilation -XX:+UseBiasedLocking -Xms48m -Xmx1024m "
+        comando << "java -server -XX:+TieredCompilation -XX:-UseBiasedLocking -Xms48m -Xmx1024m "
         comando << "-jar $nomeJar \"\$@\"\n"
     }
 }

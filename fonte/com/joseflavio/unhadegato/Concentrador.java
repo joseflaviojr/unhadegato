@@ -172,10 +172,25 @@ public class Concentrador {
         public void run() {
     
             Consumidor consumidor = null;
+
+            int  mem_passo  = 0;
+            long mem_maxima = Runtime.getRuntime().maxMemory();
+            long mem_alocada, mem_livre;
     
             while( true ){
     
                 try{
+
+                    if( ++mem_passo == 100 ){
+                        mem_passo  = 0;
+                        mem_alocada = Runtime.getRuntime().totalMemory();
+                        mem_livre   = Runtime.getRuntime().freeMemory();
+                        while( ( mem_alocada / (double) mem_maxima ) > 0.9d && ( mem_livre / (double) mem_alocada ) < 0.1d ){
+                            log.warn( Util.getMensagem( "sistema.memoria.pouca", mem_livre, mem_alocada ) );
+                            System.gc();
+                            Thread.sleep( 10000 );
+                        }
+                    }
                     
                     consumidor = servidor.aceitar();
     
@@ -191,7 +206,7 @@ public class Concentrador {
                     }else{
     
                         CopaibaGerenciador gerenciador = gerenciadores.get( nome );
-    
+
                         if( gerenciador != null ){
                             gerenciador.inserirConsumidor( consumidor );
                         }else{
