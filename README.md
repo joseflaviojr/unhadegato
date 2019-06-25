@@ -1,8 +1,8 @@
 # Unha-de-gato
 
-Concentrador de [Copaíbas](http://joseflavio.com/copaiba).
+A Unha-de-gato foi **DESCONTINUADA** em prol da otimização da comunicação entre [Copaíbas](http://joseflavio.com/copaiba) e [Uxi-amarelo](http://joseflavio.com/uxiamarelo). A Copaíba tem adotado práticas de assincronicidade e outros modernos recursos que fogem do escopo da Unha-de-gato. Talvez, futuramente, a Unha-de-gato seja retomada com foco em sistemas distribuídos, tendo como núcleo a própria Copaíba.
 
-Concentrator of [Copaíbas](http://joseflavio.com/copaiba).
+The Unha-de-gato was **DESCONTINUATED** in favor of the optimization of communication between [Copaíbas](http://joseflavio.com/copaiba) and [Uxi-amarelo](http://joseflavio.com/uxiamarelo). Copaíba has adopted practices of asynchronicity and other modern resources that escape the scope of the Unha-de-gato. Perhaps, in the future, the Unha-de-gato will be resumed with a focus on distributed systems, with Copaíba as its core.
 
 ## Descrição
 
@@ -46,7 +46,7 @@ docker volume create --name unhadegato
 Executar pela primeira vez:
 
 ```sh
-docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A16
+docker run --name="unhadegato" -d -p 8885:8885 -p 8886:8886 -e TZ=America/Belem -v unhadegato:/volume --ip=x.x.x.x --net xxxxxx --restart=unless-stopped joseflavio/unhadegato:1.0-A16
 ```
 
 > A Unha-de-gato será inicializada automaticamente no processo de boot, a não ser que seja voluntariamente parada: `docker stop unhadegato`.
@@ -62,6 +62,7 @@ cd /var/lib/docker/volumes/unhadegato/_data/conf
 Verificar arquivos de log:
 
 ```sh
+docker logs --tail 50 -f unhadegato
 tail /var/lib/docker/volumes/unhadegato/_data/logs/unhadegato.log -n 100
 ```
 
